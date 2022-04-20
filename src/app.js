@@ -111,6 +111,29 @@ const createAccount = async (req, res) => {
 
 }
 
+async function pay(amountToPay){
+  accountA = await server.loadAccount(pairA.publicKey())
+  time = new Date().getTime()
+  console.log(amountToPay)
+  const transaction = new Stellar.TransactionBuilder(accountA,{fee: '100.0',networkPassphrase: 'Test SDF Network ; September 2015'})
+    .addOperation(Stellar.Operation.payment({
+      destination: pairB.publicKey(),
+      asset: Stellar.Asset.native(),
+      amount: '1.0'
+    })).setTimeout(1000)
+    .build()
+
+  transaction.sign(pairA)
+
+  console.log("\nXDR format of transaction: ", transaction.toEnvelope().toXDR('base64'))
+
+  try {
+    const transactionResult = await server.submitTransaction(transaction)
+  } catch (err) {
+    console.log(err)
+  }
+
+}
 const makePayment = async (req, res) => {
   accountA = await server.loadAccount(pairA.publicKey())
   time = new Date().getTime()
@@ -202,3 +225,23 @@ app.get('/getHistory', getHistory)
 var instance = app.listen(port, () => {
   console.log(`Stellar test app listening on port ${port}!`)
 })
+
+var readline = require('readline');
+
+var rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+var waitForUserInput = function() {
+  rl.question("", function(answer) {
+    var args = answer.split(' ')
+    if (args[0] == "pay"){
+        if(pay(args[1])!=2){
+          waitForUserInput();
+        }
+    } else {
+        waitForUserInput();
+    }
+  });
+}
+waitForUserInput();
